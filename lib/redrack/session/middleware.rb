@@ -33,7 +33,8 @@ module Redrack
         redis_options[:db]       = @default_options[:redis_database] || 0
         redis_options[:timeout]  = @default_options[:redis_timeout]  || 5
         redis_options[:password] = @default_options[:redis_password] if @default_options[:redis_password].is_a?(String)
-        @redis = ::Redis.new(redis_options)
+        @redis = ::Redis.new(redis_options.merge(:thread_safe => true))
+        @redis.ping
         if @default_options[:redis_namespace]
           @redis = ::Redis::Namespace.new(@default_options[:redis_namespace], :redis => @redis)
         end

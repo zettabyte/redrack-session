@@ -15,9 +15,28 @@ module Redrack
       def call(env)
         request = Rack::Request.new(env)
         session = env["rack.session"]
+        session["counter"] ||= 0 # Always at least initialize the session
+        if request.path == "/add"
+          session["counter"] += 1 # Add one to counter
+        elsif request.path == "/set-deep-hash"
+          session[:a] = :b
+          session[:c] = { :d => :e }
+          session[:f] = { :g => { :h => :i } }
+        elsif request.path == "/mutate-deep-hash"
+          session[:f][:g][:h] = :j
+        elsif request.path == "/drop-counter"
+          session.delete "counter"
+          session["foo"] = "bar"
+        end
         Rack::Response.new do |response|
           response.write "<!doctype html>\n<html>\n<head><title>Redrack::Session Test App</title></head>\n<body>\n<pre>"
-          response.write "Session? #{!session.nil?}"
+          if session["counter"]
+            response.write "Session Counter: #{session["counter"]}"
+          elsif session["foo"]
+            response.write "Session Foo: #{session["foo"]}"
+          else
+            response.write "Nothing"
+          end
           response.write "\n</pre>\n</body>\n</html>\n"
         end.finish
       end
@@ -26,9 +45,53 @@ module Redrack
       # Define helper class method that creates an instance of our simple rack
       # application with our session middleware available.
       #
-      def self.app
-        # Use redis defaults: server at 127.0.0.1:6379, using database #0, no namespace
-        Rack::Lint.new(Redrack::Session::Middleware.new(new))
+      def self.app(options = {})
+        Rack::Lint.new(Redrack::Session::Middleware.new(new, options))
+      end
+
+      #
+      # Define helper class that gets an instance of our simple rack app wrapped
+      # in a context that sets "rack.session.options" :drop setting to true.
+      #
+      def self.drop_app(options = {})
+        main_app        = new()
+        drop_middleware = proc { |env| env["rack.session.options"][:drop] = true; main_app.call(env) }
+        Rack::Lint.new(Rack::Utils::Context.new(Redrack::Session::Middleware.new(main_app, options), drop_middleware))
+      end
+
+      #
+      # Define helper class that gets an instance of our simple rack app wrapped
+      # in a context that sets "rack.session.options" :renew setting to true.
+      #
+      def self.renew_app(options = {})
+        main_app         = new()
+        renew_middleware = proc { |env| env["rack.session.options"][:renew] = true; main_app.call(env) }
+        Rack::Lint.new(Rack::Utils::Context.new(Redrack::Session::Middleware.new(main_app, options), renew_middleware))
+      end
+
+      #
+      # Define helper class that gets an instance of our simple rack app wrapped
+      # in a context that sets "rack.session.options" :defer setting to true.
+      #
+      def self.defer_app(options = {})
+        main_app         = new()
+        defer_middleware = proc { |env| env["rack.session.options"][:defer] = true; main_app.call(env) }
+        Rack::Lint.new(Rack::Utils::Context.new(Redrack::Session::Middleware.new(main_app, options), defer_middleware))
+      end
+
+      #
+      # Define helper class that gets an instance of our simple rack app wrapped
+      # in a context that emulates the disconjoinment of multithreaded access.
+      #
+      def self.threaded_app(options = {})
+        main_app            = new()
+        threaded_middleware = proc do |env|
+          env["rack.session"] = env["rack.session"].dup
+          Thread.stop
+          env["rack.session"][(Time.now.usec * rand).to_i] = true
+          main_app.call(env)
+        end
+        Rack::Lint.new(Rack::Utils::Context.new(Redrack::Session::Middleware.new(main_app, options), threaded_middleware))
       end
 
     end

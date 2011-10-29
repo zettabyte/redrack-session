@@ -17,7 +17,25 @@ Dir[File.join(File.expand_path("..", __FILE__), "support", "**", "*.rb")].each {
 RSpec.configure do |config|
   require 'rack/test'
   config.include Rack::Test::Methods
-  def app
-    Redrack::Session::RackApp.app
+
+  def app(options = {})
+    Redrack::Session::RackApp.app(options)
   end
+
+  def drop_app(options = {})
+    Redrack::Session::RackApp.drop_app(options)
+  end
+
+  def renew_app(options = {})
+    Redrack::Session::RackApp.renew_app(options)
+  end
+
+  def defer_app(options = {})
+    Redrack::Session::RackApp.defer_app(options)
+  end
+
+  def threaded_app(options = {})
+    Redrack::Session::RackApp.threaded_app(options)
+  end
+
 end
