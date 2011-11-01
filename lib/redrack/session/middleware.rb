@@ -2,7 +2,6 @@
 require 'rack/session/abstract/id'
 require 'redis'
 require 'redis-namespace'
-require 'multi_json'
 
 module Redrack
   module Session
@@ -43,7 +42,7 @@ module Redrack
       def generate_sid
         # Atomically test if sid available and reserve it if it is
         sid = super # first iteration
-        sid = super until @redis.setnx(sid, "{}") # "{}" is JSON for empty hash
+        sid = super until @redis.setnx(sid, Marshal.dump({}))
         # Set our allocated sid to expire if it isn't used any time soon
         expiry = (@default_options[:expire_after] || 0).to_i
         @redis.expire(sid, expiry <= 0 ? 600 : expiry)
@@ -53,7 +52,7 @@ module Redrack
       def get_session(env, sid)
         with_lock(env, [nil, {}]) do
           if sid and @redis.exists(sid)
-            session = MultiJson.decode(@redis.get(sid))
+            session = Marshal.load(@redis.get(sid))
           else
             sid, session = generate_sid, {}
           end
@@ -67,7 +66,7 @@ module Redrack
 
         with_lock(env, false) do
           @redis.del(session_id)
-          @redis.set(session_id, MultiJson.encode(new_session.to_hash))
+          @redis.set(session_id, Marshal.dump(new_session.to_hash))
           @redis.expire(session_id, expiry) if expiry > 0
           session_id
         end
