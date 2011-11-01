@@ -151,14 +151,14 @@ module Redrack
           session.get("/add", {}, "rack.multithreaded" => true)
           [mock.last_response.body, mock.cookie_jar["rack.session"]]
         end
-      end.reverse.each { |t| t.run }.map { |t| t.join.value }
+      end.reverse.map { |t| t.run.join.value }
       requests.each do |response|
         response.first.should match /Session Counter: 2/ # the response body
         response.last.should == sid                      # the session ID (cookie value)
       end
 
       # verify all our timestamps were written by the threaded_app
-      session = MultiJson.decode(main_app.redis.get(sid))
+      session = Marshal.dump(main_app.redis.get(sid))
       session.size.should       == threads + 1
       session["counter"].should == 2
     end

@@ -86,7 +86,6 @@ module Redrack
       def self.threaded_app(options = {})
         main_app            = new()
         threaded_middleware = proc do |env|
-          env["rack.session"] = env["rack.session"].dup
           Thread.stop
           env["rack.session"][(Time.now.usec * rand).to_i] = true
           main_app.call(env)
