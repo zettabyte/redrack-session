@@ -6,8 +6,10 @@ require 'redis-namespace'
 module Redrack
   module Session
     class Middleware < Rack::Session::Abstract::ID
-      attr_reader :mutex, :redis
 
+      attr_reader :redis # provide raw access to redis database (for testing)
+
+      # redis-specific default options (following the Abstract::ID pattern)
       DEFAULT_OPTIONS = Rack::Session::Abstract::ID::DEFAULT_OPTIONS.merge(
         :redis_password  =>  nil,        # optional authentication password for redis server
         :redis_namespace =>  nil,        # optional namespace under which session keys are stored
@@ -21,6 +23,8 @@ module Redrack
       def initialize(app, options = {})
         super
         @mutex = Mutex.new
+
+        # process redis-specific options
         if @default_options[:redis_path].is_a?(String)
           redis_options = { :path => @default_options[:redis_path] }
         else
@@ -32,13 +36,18 @@ module Redrack
         redis_options[:db]       = @default_options[:redis_database] || 0
         redis_options[:timeout]  = @default_options[:redis_timeout]  || 5
         redis_options[:password] = @default_options[:redis_password] if @default_options[:redis_password].is_a?(String)
+
+        # create connection to our redis database and ensure we're connected
         @redis = ::Redis.new(redis_options.merge(:thread_safe => true))
         @redis.ping
+
+        # store session keys under specified namespace (if any)
         if @default_options[:redis_namespace]
           @redis = ::Redis::Namespace.new(@default_options[:redis_namespace], :redis => @redis)
         end
       end
 
+      private
       def generate_sid
         # Atomically test if sid available and reserve it if it is
         sid = super # first iteration
