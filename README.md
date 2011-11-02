@@ -71,6 +71,7 @@ run Rackapp.new
 ```
 
 ```ruby
+# lib/rackapp.rb
 require 'redrack-session'
 require 'rack/request'
 require 'rack/response'
@@ -93,7 +94,17 @@ class Rackapp
 end
 ```
 
-### To Do
+Once the files are in place and the `bundler` gem is installed, you can then
+complete setup and run the example rack app by doing the following:
+
+```bash
+user@host:~/projects/rackapp$ bundle install
+user@host:~/projects/rackapp$ bundle exec rackup
+```
+
+This will then run a WEBrick server on you computer on port `9292`.
+
+### TODO
 
 The ultimate intent, starting with this gem, is develop several `redrack-*` gems
 for storing various datasets in redis, including cache, i18n (translation), and
@@ -107,7 +118,7 @@ Finally, I'd like to create a master `redrack` and a `redrails` meta-gem that
 depends on the full gamut and perhaps includes other conveniences (factory
 methods, glue code) for the most common cases of usage.
 
-#### Gems To Do:
+#### Gems TODO:
 
 - Create redrack-cache gem
 - Create redrack-throttle gem
