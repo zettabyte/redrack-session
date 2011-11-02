@@ -134,33 +134,61 @@ module Redrack
     end
 
     it "cleanly merges sessions when multithreaded" do
+      mutex               = Mutex.new
+      count               = 0
       main_app            = Redrack::Session::Middleware.new(Redrack::Session::RackApp.new)
       main_mock_session   = Rack::MockSession.new(main_app)
       thread_mock_session = Rack::MockSession.new(threaded_app())
       main_session        = Rack::Test::Session.new(main_mock_session)
       thread_session      = Rack::Test::Session.new(thread_mock_session)
-      num_threads         = lambda { rand(7).to_i + 5 }
+      random_thread_count = lambda { rand(7).to_i + 5 }
       main_session.get("/add") { |r| r.body.should match /Session Counter: 1/ }
       sid = main_mock_session.cookie_jar["rack.session"]
       thread_mock_session.set_cookie("rack.session=#{sid}")
 
       # do several, multi-threaded requests...
-      threads  = num_threads.call
-      requests = Array.new(threads) do
+      num_threads = random_thread_count.call
+      threads     = (1..num_threads).map do |i|
         Thread.new(thread_session, thread_mock_session) do |session, mock|
+          mutex.synchronize { count += 1 }
           session.get("/add", {}, "rack.multithreaded" => true)
           [mock.last_response.body, mock.cookie_jar["rack.session"]]
         end
-      end.reverse.map { |t| t.run.join.value }
+      end
+      sleep 1 until mutex.synchronize { count == num_threads }
+      threads.each { |thread| sleep 1 until thread.stop? }
+      requests = threads.reverse.map { |t| t.run.join.value }
+      count = 2
       requests.each do |response|
-        response.first.should match /Session Counter: 2/ # the response body
-        response.last.should == sid                      # the session ID (cookie value)
+        response.first.should match /Session Counter: #{count}/
+        response.last.should == sid
+        count += 1
       end
 
       # verify all our timestamps were written by the threaded_app
-      session = Marshal.dump(main_app.redis.get(sid))
-      session.size.should       == threads + 1
-      session["counter"].should == 2
+      session = Marshal.load(main_app.redis.get(sid))
+      session.size.should       == num_threads + 1
+      session["counter"].should == num_threads + 1
+
+      # test multi-threaded session element deletion
+      old_threads = num_threads
+      num_threads = random_thread_count.call
+      threads     = (1..num_threads).map do |i|
+        Thread.new(main_session, main_mock_session) do |session, mock|
+          session.get("/drop-counter", {}, "rack.multithreaded" => true)
+          [mock.last_response.body, mock.cookie_jar["rack.session"]]
+        end
+      end
+      requests = threads.reverse.map { |t| t.join.value }
+      requests.each do |response|
+        response.first.should match /Session Foo: bar/
+        response.last.should == sid
+      end
+      session = Marshal.load(main_app.redis.get(sid))
+      session.size.should       == old_threads + 1
+      session["foo"].should     == "bar"
+      session["counter"].should be_nil
+
     end
 
   end
