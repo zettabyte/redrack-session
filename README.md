@@ -6,6 +6,10 @@ This provides browser sessions for your rack application, storing a unique
 session ID in a cookie in the client's browser and the session data in a redis
 server.
 
+If you want to use this gem in a rails app, check out
+[redrails-session](https://github.com/zettabyte/redrails-session) for an
+easy-to-use wrapper.
+
 ### Usage
 
 This gem may be used in much the same way as you might use the
@@ -102,7 +106,7 @@ user@host:~/projects/rackapp$ bundle install
 user@host:~/projects/rackapp$ bundle exec rackup
 ```
 
-This will then run a WEBrick server on you computer on port `9292`.
+This will then run a WEBrick server on localhost port `9292`.
 
 ### TODO
 
