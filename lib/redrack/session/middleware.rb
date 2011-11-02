@@ -5,19 +5,39 @@ require 'redis-namespace'
 
 module Redrack
   module Session
+
+    #
+    # Redrack::Session::Middleware provides redis-based session-storage with the session ID
+    # stored in a cookie on the client's browser.
+    #
+    # This can be used much like the Rack::Session::Cookie or Rack::Session::Pool session
+    # storage middleware classes provided in the rack gem. This class supports the same
+    # options as these classes with the following additional options:
+    #
+    #   :redis_host -- hostname or IP of redis database server (default '127.0.0.1')
+    #   :redis_port -- port to connect to redis database server (default 6379)
+    #   :redis_path -- specify this if connecting to redis server via socket
+    #   :redis_database -- default redis database to hold sessions (default 0)
+    #   :redis_timeout -- default redis connection timeout in seconds (default 5)
+    #   :redis_namespace -- optional namespace under which session keys are stored
+    #   :redis_password -- optional authentication password for redis server
+    #
+    # See the gem's README.md for more information.
+    #
     class Middleware < Rack::Session::Abstract::ID
 
       attr_reader :redis # provide raw access to redis database (for testing)
 
-      # redis-specific default options (following the Abstract::ID pattern)
+      # redis-specific default options (in addition to those specified in
+      # Rack::Session::Abstract::ID::DEFAULT_OPTIONS)
       DEFAULT_OPTIONS = Rack::Session::Abstract::ID::DEFAULT_OPTIONS.merge(
-        :redis_password  =>  nil,        # optional authentication password for redis server
-        :redis_namespace =>  nil,        # optional namespace under which session keys are stored
-        :redis_path      =>  nil,        # specify this if connecting to redis server via socket
-        :redis_host      => "127.0.0.1", # hostname or IP of redis database server
-        :redis_port      =>  6379,       # port to connect to redis database server
-        :redis_database  =>     0,       # default redis database to hold sessions
-        :redis_timeout   =>     5        # default redis connection timeout (seconds)
+        :redis_password  =>  nil,
+        :redis_namespace =>  nil,
+        :redis_path      =>  nil,
+        :redis_host      => "127.0.0.1",
+        :redis_port      =>  6379,
+        :redis_database  =>     0,
+        :redis_timeout   =>     5
         )
 
       def initialize(app, options = {})
