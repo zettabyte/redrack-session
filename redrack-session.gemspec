@@ -20,9 +20,9 @@ Gem::Specification.new do |s|
   s.require_paths = ["lib"]
 
   s.add_development_dependency "bundler",         "~> 1.0.21"
-  s.add_development_dependency "rspec",           "~> 2.7.0"
+  s.add_development_dependency "rspec",           ">= 2.7.0", "< 2.9"
   s.add_development_dependency "rack-test",       "~> 0.6.1"
-  s.add_runtime_dependency     "rack",            "~> 1.3.5"
+  s.add_runtime_dependency     "rack",            ">= 1.3.5", "< 1.5"
   s.add_runtime_dependency     "redis",           "~> 2.2.2"
   s.add_runtime_dependency     "redis-namespace", "~> 1.1.0"
 end
