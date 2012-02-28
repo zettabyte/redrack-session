@@ -24,5 +24,5 @@ Gem::Specification.new do |s|
   s.add_development_dependency "rack-test",       "~> 0.6.1"
   s.add_runtime_dependency     "rack",            ">= 1.3.5", "< 1.5"
   s.add_runtime_dependency     "redis",           "~> 2.2.2"
-  s.add_runtime_dependency     "redis-namespace", "~> 1.1.0"
+  s.add_runtime_dependency     "redis-namespace", ">= 1.0.2", "< 2.0"
 end
