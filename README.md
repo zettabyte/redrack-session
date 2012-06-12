@@ -6,6 +6,8 @@ This provides browser sessions for your rack application, storing a unique
 session ID in a cookie in the client's browser and the session data in a redis
 server.
 
+[![Build Status](https://secure.travis-ci.org/zettabyte/redrack-session.png)](http://travis-ci.org/zettabyte/redrack-session)
+
 If you want to use this gem in a rails app, check out
 [redrails-session](https://github.com/zettabyte/redrails-session) for an
 easy-to-use wrapper.
