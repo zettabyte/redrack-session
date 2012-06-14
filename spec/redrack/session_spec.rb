@@ -5,7 +5,7 @@ module Redrack
   describe Session do
 
     it "faults on no connection" do
-      expect { app(:redis_host => "nosuchserver") }.to raise_error(SocketError)
+      expect { app(:redis_host => "nosuchserver") }.to raise_error { |e| [SocketError, Timeout::Error].should include(e.class) }
     end
 
     it "connects to existing server" do
