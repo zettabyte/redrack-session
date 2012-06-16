@@ -11,4 +11,3 @@ Feature: Add middleware to app
     When I configure my rack app to use the redrack-session middleware
     Then my app's session data is stored in my redis database
 
-
